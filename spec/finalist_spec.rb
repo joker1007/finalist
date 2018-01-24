@@ -223,7 +223,7 @@ RSpec.describe Finalist do
     it "raise Finalist::OverrideFinalMethodError", aggregate_failures: true do
       ex = nil
       begin
-        module H1
+        module I1
           extend Finalist
 
           final def foo
@@ -233,7 +233,7 @@ RSpec.describe Finalist do
         a = "str"
         def a.foo
         end
-        a.extend(H1)
+        a.extend(I1)
       rescue Finalist::OverrideFinalMethodError => e
         ex = e
       end
@@ -249,7 +249,7 @@ RSpec.describe Finalist do
     it "raise Finalist::OverrideFinalMethodError", aggregate_failures: true do
       ex = nil
       begin
-        class I1
+        class J1
           extend Finalist
 
           class << self
@@ -258,7 +258,7 @@ RSpec.describe Finalist do
           end
         end
 
-        class I2 < I1
+        class J2 < J1
           class << self
             def foo
             end
@@ -270,7 +270,7 @@ RSpec.describe Finalist do
 
       expect(ex).not_to be_nil
       expect(ex.detect_type).to eq(:singleton_method_added)
-      expect(ex.override_class).to eq(I2)
+      expect(ex.override_class).to eq(J2)
       expect(ex.unbound_method.name).to eq(:foo)
     end
   end
@@ -279,15 +279,15 @@ RSpec.describe Finalist do
     it "raise Finalist::OverrideFinalMethodError", aggregate_failures: true do
       ex = nil
       begin
-        module J1
+        module K1
           extend Finalist
 
           final def foo
           end
         end
 
-        class J2
-          extend J1
+        class K2
+          extend K1
 
           class << self
             def foo
@@ -300,7 +300,7 @@ RSpec.describe Finalist do
 
       expect(ex).not_to be_nil
       expect(ex.detect_type).to eq(:extended_singleton_method_added)
-      expect(ex.override_class).to eq(J2.singleton_class)
+      expect(ex.override_class).to eq(K2.singleton_class)
       expect(ex.unbound_method.name).to eq(:foo)
     end
   end
@@ -309,20 +309,20 @@ RSpec.describe Finalist do
     it "raise Finalist::OverrideFinalMethodError", aggregate_failures: true do
       ex = nil
       begin
-        module K1
+        module L1
           extend Finalist
 
           final def foo
           end
         end
 
-        class K2
+        class L2
           class << self
             def foo
             end
           end
 
-          extend K1
+          extend L1
         end
       rescue Finalist::OverrideFinalMethodError => e
         ex = e
@@ -330,7 +330,7 @@ RSpec.describe Finalist do
 
       expect(ex).not_to be_nil
       expect(ex.detect_type).to eq(:extended)
-      expect(ex.override_class).to eq(K2.singleton_class)
+      expect(ex.override_class).to eq(L2.singleton_class)
       expect(ex.unbound_method.name).to eq(:foo)
     end
   end
