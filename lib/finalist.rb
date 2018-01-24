@@ -26,7 +26,7 @@ module Finalist
   end
 
   module ModuleMethods
-    def append_features(base)
+    def included(base)
       super
 
       base.extend(Finalist)
