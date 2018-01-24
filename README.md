@@ -1,4 +1,5 @@
 # Finalist
+[![Build Status](https://travis-ci.org/joker1007/finalist.svg?branch=master)](https://travis-ci.org/joker1007/finalist)
 
 Finalist adds `final` method modifier.
 `final` forbids method override.
