@@ -1,8 +1,28 @@
 # Finalist
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/finalist`. To experiment with that code, run `bin/console` for an interactive prompt.
+Finalist adds `final` method modifier.
+`final` forbids method override.
 
-TODO: Delete this and the text above, and describe your gem
+Simple case is following.
+
+```ruby
+class A1
+  extend Finalist
+
+  final def foo
+  end
+end
+
+class A2 < A1
+  def foo
+  end
+end
+```
+
+This case raises `Finalist::OverrideFinalMethodError` at `def foo in A2 class`.
+
+This gem supports other cases.
+(see [finalist_spec.rb](https://github.com/joker1007/finalist/blob/master/spec/finalist_spec.rb))
 
 ## Installation
 
@@ -22,7 +42,147 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+A class or module extends `Finalist` module
+And add `final` modifier to target method.
+(`final` can accept symbol as method name.)
+
+### Examples
+
+#### include module
+
+```ruby
+module E1
+  extend Finalist
+
+  final def foo
+  end
+end
+
+module E2
+  include E1
+end
+
+module E3
+  include E2
+
+  def foo # => raise
+  end
+end
+```
+
+#### include module after override
+
+```ruby
+module F1
+  extend Finalist
+
+  final def foo
+  end
+end
+
+class F2
+  def foo
+  end
+
+  include F1 # => raise
+end
+```
+
+#### class method
+
+```ruby
+class J1
+  extend Finalist
+
+  class << self
+    final def foo
+    end
+  end
+end
+
+class J2 < J1
+  class << self
+    def foo # => raise
+    end
+  end
+end
+```
+
+#### extend object
+
+```ruby
+module H1
+  extend Finalist
+
+  final def foo
+  end
+end
+
+a = "str"
+a.extend(H1)
+def a.foo # => raise
+end
+```
+
+#### extend object after override
+
+```ruby
+module I1
+  extend Finalist
+
+  final def foo
+  end
+end
+
+a = "str"
+def a.foo
+end
+a.extend(I1) # => raise
+```
+
+#### class method by extend module
+
+```ruby
+module K1
+  extend Finalist
+
+  final def foo
+  end
+end
+
+class K2
+  extend K1
+
+  class << self
+    def foo # => raise
+    end
+  end
+end
+```
+
+#### class method by extend module after override
+
+```ruby
+module L1
+  extend Finalist
+
+  final def foo
+  end
+end
+
+class L2
+  class << self
+    def foo
+    end
+  end
+
+  extend L1 # => raise
+end
+```
+
+## How is this implemented?
+
+Use so many ruby hooks. `TracePoint` and `method_added` and `singleton_method_added` and `included` and `extended`.
 
 ## Development
 
