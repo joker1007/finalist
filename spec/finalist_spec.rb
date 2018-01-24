@@ -40,6 +40,21 @@ RSpec.describe Finalist do
       expect(ex.detect_type).to eq(:method_added)
       expect(ex.override_class).to eq(A2)
       expect(ex.unbound_method.name).to eq(:foo)
+
+      ex = nil
+      begin
+        Class.new(A1) do
+          def foo
+          end
+        end
+      rescue Finalist::OverrideFinalMethodError => e
+        ex = e
+      end
+
+      expect(ex).not_to be_nil
+      expect(ex.detect_type).to eq(:method_added)
+      expect(ex.override_class).not_to eq(A2)
+      expect(ex.unbound_method.name).to eq(:foo)
     end
   end
 
@@ -98,6 +113,23 @@ RSpec.describe Finalist do
       expect(ex).not_to be_nil
       expect(ex.detect_type).to eq(:method_added)
       expect(ex.override_class).to eq(D2)
+      expect(ex.unbound_method.name).to eq(:foo)
+
+      ex = nil
+      begin
+        Class.new do
+          include D1
+
+          def foo
+          end
+        end
+      rescue Finalist::OverrideFinalMethodError => e
+        ex = e
+      end
+
+      expect(ex).not_to be_nil
+      expect(ex.detect_type).to eq(:method_added)
+      expect(ex.override_class).not_to eq(D2)
       expect(ex.unbound_method.name).to eq(:foo)
     end
   end
@@ -158,6 +190,23 @@ RSpec.describe Finalist do
       expect(ex).not_to be_nil
       expect(ex.detect_type).to eq(:trace_point)
       expect(ex.override_class).to eq(F2)
+      expect(ex.unbound_method.name).to eq(:foo)
+
+      ex = nil
+      begin
+        Class.new do
+          def foo
+          end
+
+          include F1
+        end
+      rescue Finalist::OverrideFinalMethodError => e
+        ex = e
+      end
+
+      expect(ex).not_to be_nil
+      expect(ex.detect_type).to eq(:trace_point)
+      expect(ex.override_class).not_to eq(F2)
       expect(ex.unbound_method.name).to eq(:foo)
     end
   end
@@ -331,6 +380,25 @@ RSpec.describe Finalist do
       expect(ex).not_to be_nil
       expect(ex.detect_type).to eq(:extended)
       expect(ex.override_class).to eq(L2.singleton_class)
+      expect(ex.unbound_method.name).to eq(:foo)
+
+      ex = nil
+      begin
+        Class.new do
+          self.singleton_class.class_eval do
+            def foo
+            end
+          end
+
+          extend L1
+        end
+      rescue Finalist::OverrideFinalMethodError => e
+        ex = e
+      end
+
+      expect(ex).not_to be_nil
+      expect(ex.detect_type).to eq(:extended)
+      expect(ex.override_class).not_to eq(L2.singleton_class)
       expect(ex.unbound_method.name).to eq(:foo)
     end
   end

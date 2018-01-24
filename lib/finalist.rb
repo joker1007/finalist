@@ -31,7 +31,15 @@ module Finalist
 
       base.extend(Finalist)
 
-      tp = TracePoint.new(:end) do |ev|
+      caller_info = caller_locations(1, 2).last
+      event_type =
+        if caller_info.label.match?(/block/)
+          :b_return
+        else
+          :end
+        end
+
+      tp = TracePoint.new(event_type) do |ev|
         if ev.self == base
           base.ancestors.drop(1).each do |mod|
             Finalist.finalized_methods[mod]&.each do |fmeth_name|
