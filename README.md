@@ -47,6 +47,10 @@ A class or module extends `Finalist` module
 And add `final` modifier to target method.
 (`final` can accept symbol as method name.)
 
+### for Production
+If you want to disable Finalist, write `Finalist.disable = true` at first line.
+If Finalist is disabled, TracePoint never runs, and so there is no overhead of VM instruction.
+
 ### Examples
 
 #### include module
