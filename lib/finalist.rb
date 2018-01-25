@@ -39,29 +39,20 @@ module Finalist
           :end
         end
 
-      tp = TracePoint.new(event_type) do |ev|
-        if ev.self == base
-          base.ancestors.drop(1).each do |mod|
-            Finalist.finalized_methods[mod]&.each do |fmeth_name|
-              if meth = base.instance_method(fmeth_name)
-                super_method = meth.super_method
-                while super_method
-                  if Finalist.finalized_methods[super_method.owner]&.member?(super_method.name)
-                    tp.disable
-                    base.instance_variable_set("@__finalist_tp", nil)
-                    raise OverrideFinalMethodError.new("#{super_method} at #{super_method.source_location.join(":")} is overrided\n  by #{meth} at #{meth.source_location.join(":")}", base, super_method.owner, meth, :trace_point)
-                  end
-
-                  super_method = super_method.super_method
-                end
+      base.ancestors.drop(1).each do |mod|
+        Finalist.finalized_methods[mod]&.each do |fmeth_name|
+          if meth = base.instance_method(fmeth_name)
+            super_method = meth.super_method
+            while super_method
+              if Finalist.finalized_methods[super_method.owner]&.member?(super_method.name)
+                raise OverrideFinalMethodError.new("#{super_method} at #{super_method.source_location.join(":")} is overrided\n  by #{meth} at #{meth.source_location.join(":")}", base, super_method.owner, meth, :included)
               end
+
+              super_method = super_method.super_method
             end
           end
-          tp.disable
         end
       end
-      tp.enable
-      base.instance_variable_set("@__finalist_tp", tp)
     end
 
     def extended(base)
@@ -72,8 +63,6 @@ module Finalist
         super_method = meth.super_method
         while super_method
           if Finalist.finalized_methods[super_method.owner]&.member?(super_method.name)
-            @__finalist_tp&.disable
-            @__finalist_tp = nil
             raise OverrideFinalMethodError.new("#{super_method} at #{super_method.source_location.join(":")} is overrided\n  by #{meth} at #{meth.source_location.join(":")}", singleton_class, super_method.owner, meth, :extended_singleton_method_added)
           end
           super_method = super_method.super_method
@@ -86,9 +75,6 @@ module Finalist
             super_method = meth.super_method
             while super_method
               if Finalist.finalized_methods[super_method.owner]&.member?(super_method.name)
-                base.instance_variable_get("@__finalist_tp")&.disable
-                base.instance_variable_set("@__finalist_tp", nil)
-
                 raise OverrideFinalMethodError.new("#{super_method} at #{super_method.source_location.join(":")} is overrided\n  by #{meth} at #{meth.source_location.join(":")}", base.singleton_class, super_method.owner, meth, :extended)
               end
               super_method = super_method.super_method
@@ -113,8 +99,6 @@ module Finalist
     super_method = meth.super_method
     while super_method
       if Finalist.finalized_methods[super_method.owner]&.member?(super_method.name)
-        @__finalist_tp&.disable
-        @__finalist_tp = nil
         raise OverrideFinalMethodError.new("#{super_method} at #{super_method.source_location.join(":")} is overrided\n  by #{meth} at #{meth.source_location.join(":")}", self, super_method.owner, meth, :method_added)
       end
       super_method = super_method.super_method
@@ -128,8 +112,6 @@ module Finalist
     super_method = meth.super_method
     while super_method
       if Finalist.finalized_methods[super_method.owner]&.member?(super_method.name)
-        @__finalist_tp&.disable
-        @__finalist_tp = nil
         raise OverrideFinalMethodError.new("#{super_method} at #{super_method.source_location.join(":")} is overrided\n  by #{meth} at #{meth.source_location.join(":")}", self, super_method.owner, meth, :singleton_method_added)
       end
       super_method = super_method.super_method

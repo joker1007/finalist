@@ -183,7 +183,7 @@ end
 
 ## How is this implemented?
 
-Use so many ruby hooks. `TracePoint` and `method_added` and `singleton_method_added` and `included` and `extended`.
+Use so many ruby hooks. `method_added` and `singleton_method_added` and `included` and `extended`.
 
 ## Development
 

@@ -188,7 +188,7 @@ RSpec.describe Finalist do
       end
 
       expect(ex).not_to be_nil
-      expect(ex.detect_type).to eq(:trace_point)
+      expect(ex.detect_type).to eq(:included)
       expect(ex.override_class).to eq(F2)
       expect(ex.unbound_method.name).to eq(:foo)
 
@@ -205,7 +205,7 @@ RSpec.describe Finalist do
       end
 
       expect(ex).not_to be_nil
-      expect(ex.detect_type).to eq(:trace_point)
+      expect(ex.detect_type).to eq(:included)
       expect(ex.override_class).not_to eq(F2)
       expect(ex.unbound_method.name).to eq(:foo)
     end
@@ -236,7 +236,7 @@ RSpec.describe Finalist do
       end
 
       expect(ex).not_to be_nil
-      expect(ex.detect_type).to eq(:trace_point)
+      expect(ex.detect_type).to eq(:included)
       expect(ex.override_class).to eq(G2)
       expect(ex.unbound_method.name).to eq(:foo)
     end
