@@ -432,4 +432,44 @@ RSpec.describe Finalist do
       expect(ex).to be_nil
     end
   end
+
+  context "Finalist.disable = true" do
+    around do |ex|
+      Finalist.disable = true
+      ex.call
+      Finalist.disable = false
+    end
+
+    it "does not raise" do
+      expect {
+        class N1
+          extend Finalist
+
+          final def foo
+          end
+        end
+
+        class N2 < N1
+          def foo
+          end
+        end
+
+        class N3
+          extend Finalist
+
+          class << self
+            final def foo
+            end
+          end
+        end
+
+        class N4 < N3
+          class << self
+            def foo
+            end
+          end
+        end
+      }.not_to raise_error
+    end
+  end
 end

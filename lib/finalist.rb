@@ -14,11 +14,27 @@ module Finalist
     end
   end
 
+  @disable = false
+
+  def self.disable=(v)
+    @disable = v
+  end
+
+  def self.disabled?
+    @disable
+  end
+
+  def self.enabled?
+    !disabled?
+  end
+
   def self.extended(base)
     super
     base.extend(SyntaxMethods)
     base.singleton_class.extend(SyntaxMethods)
-    base.extend(ModuleMethods) if base.instance_of?(Module)
+    if enabled?
+      base.extend(ModuleMethods) if base.is_a?(Module)
+    end
   end
 
   def self.finalized_methods
@@ -29,15 +45,9 @@ module Finalist
     def included(base)
       super
 
-      base.extend(Finalist)
+      return if Finalist.disabled?
 
-      caller_info = caller_locations(1, 2).last
-      event_type =
-        if caller_info.label.match?(/block/)
-          :b_return
-        else
-          :end
-        end
+      base.extend(Finalist)
 
       base.ancestors.drop(1).each do |mod|
         Finalist.finalized_methods[mod]&.each do |fmeth_name|
@@ -58,6 +68,8 @@ module Finalist
     def extended(base)
       def base.singleton_method_added(symbol)
         super
+
+        return if Finalist.disabled?
 
         meth = singleton_class.instance_method(symbol)
         super_method = meth.super_method
@@ -95,6 +107,8 @@ module Finalist
   def method_added(symbol)
     super
 
+    return if Finalist.disabled?
+
     meth = instance_method(symbol)
     super_method = meth.super_method
     while super_method
@@ -107,6 +121,8 @@ module Finalist
 
   def singleton_method_added(symbol)
     super
+
+    return if Finalist.disabled?
 
     meth = singleton_class.instance_method(symbol)
     super_method = meth.super_method
