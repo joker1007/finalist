@@ -402,4 +402,34 @@ RSpec.describe Finalist do
       expect(ex.unbound_method.name).to eq(:foo)
     end
   end
+
+  context "overrided by module prepend" do
+    it "does not raise", aggregate_failures: true do
+      ex = nil
+      begin
+        module M1
+          extend Finalist
+
+          final def foo
+          end
+        end
+
+        module M3
+          def foo
+            "foo"
+          end
+        end
+
+        class M2
+          include M1
+          prepend M3
+        end
+      rescue Finalist::OverrideFinalMethodError => e
+        ex = e
+      end
+
+      expect(M2.new.foo).to eq("foo")
+      expect(ex).to be_nil
+    end
+  end
 end

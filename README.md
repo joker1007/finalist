@@ -181,6 +181,32 @@ class L2
 end
 ```
 
+#### overrided by module prepend
+
+This case is a intended loophole.
+
+```ruby
+module M1
+  extend Finalist
+
+  final def foo
+  end
+end
+
+module M3
+  def foo
+    "foo"
+  end
+end
+
+class M2
+  include M1
+  prepend M3
+end
+
+M2.new.foo # => "foo"
+```
+
 ## How is this implemented?
 
 Use so many ruby hooks. `method_added` and `singleton_method_added` and `included` and `extended`.
