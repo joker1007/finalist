@@ -1,8 +1,13 @@
 # Finalist
 [![Build Status](https://travis-ci.org/joker1007/finalist.svg?branch=master)](https://travis-ci.org/joker1007/finalist)
+[![Gem Version](https://badge.fury.io/rb/finalist.svg)](https://badge.fury.io/rb/finalist)
 
 Finalist adds `final` method modifier.
 `final` forbids method override.
+
+This gem is pseudo static code analyzer by `method_added` and `singleton_method_added` and `included` and `extended`.
+
+it detect final violation when class(module) is defined, not runtime.
 
 Simple case is following.
 
@@ -15,7 +20,7 @@ class A1
 end
 
 class A2 < A1
-  def foo
+  def foo # => raise
   end
 end
 ```
@@ -24,6 +29,11 @@ This case raises `Finalist::OverrideFinalMethodError` at `def foo in A2 class`.
 
 This gem supports other cases.
 (see [finalist_spec.rb](https://github.com/joker1007/finalist/blob/master/spec/finalist_spec.rb))
+
+### My similar gems
+
+- [overrider](https://github.com/joker1007/overrider) (`override` implementation)
+- [abstriker](https://github.com/joker1007/abstriker) (`abstract` implementation)
 
 ## Installation
 
