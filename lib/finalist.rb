@@ -1,6 +1,20 @@
 require "finalist/version"
 require "set"
 
+using Module.new {
+  refine Object do
+    def verify_final_method(meth, detect_type)
+      super_method = meth.super_method
+      while super_method
+        if Finalist.finalized_methods[super_method.owner]&.member?(super_method.name)
+          raise Finalist::OverrideFinalMethodError.new("#{super_method.owner}##{super_method.name} at #{super_method.source_location.join(":")} is overrided\n  by #{meth.owner}##{meth.name} at #{meth.source_location.join(":")}", meth.owner, super_method.owner, meth, detect_type)
+        end
+        super_method = super_method.super_method
+      end
+    end
+  end
+}
+
 module Finalist
   class OverrideFinalMethodError < StandardError
     attr_reader :override_class, :origin_class, :unbound_method, :detect_type
@@ -41,7 +55,27 @@ module Finalist
     @finalized_methods ||= {}
   end
 
+  private
+
+  def method_added(symbol)
+    super
+
+    return if Finalist.disabled?
+
+    verify_final_method(instance_method(symbol), :method_added)
+  end
+
+  def singleton_method_added(symbol)
+    super
+
+    return if Finalist.disabled?
+
+    verify_final_method(singleton_class.instance_method(symbol), :singleton_method_added)
+  end
+
   module ModuleMethods
+    private
+
     def included(base)
       super
 
@@ -50,17 +84,15 @@ module Finalist
       base.extend(Finalist)
 
       base.ancestors.drop(1).each do |mod|
-        Finalist.finalized_methods[mod]&.each do |fmeth_name|
-          if meth = base.instance_method(fmeth_name)
-            super_method = meth.super_method
-            while super_method
-              if Finalist.finalized_methods[super_method.owner]&.member?(super_method.name)
-                raise OverrideFinalMethodError.new("#{super_method} at #{super_method.source_location.join(":")} is overrided\n  by #{meth} at #{meth.source_location.join(":")}", base, super_method.owner, meth, :included)
-              end
-
-              super_method = super_method.super_method
+        Finalist.finalized_methods[mod]&.each do |final_method_name|
+          meth =
+            begin
+              meth = base.instance_method(final_method_name)
+            rescue NoMethodError
+              nil
             end
-          end
+
+          verify_final_method(meth, :included) if meth
         end
       end
     end
@@ -71,66 +103,46 @@ module Finalist
 
         return if Finalist.disabled?
 
-        meth = singleton_class.instance_method(symbol)
-        super_method = meth.super_method
-        while super_method
-          if Finalist.finalized_methods[super_method.owner]&.member?(super_method.name)
-            raise OverrideFinalMethodError.new("#{super_method} at #{super_method.source_location.join(":")} is overrided\n  by #{meth} at #{meth.source_location.join(":")}", singleton_class, super_method.owner, meth, :extended_singleton_method_added)
+        meth =
+          begin
+            singleton_class.instance_method(symbol)
+          rescue NoMethodError
+            nil
           end
-          super_method = super_method.super_method
-        end
+
+        verify_final_method(meth, :extended_singleton_method_added) if meth
       end
 
       base.singleton_class.ancestors.drop(1).each do |mod|
-        Finalist.finalized_methods[mod]&.each do |fmeth_name|
-          if meth = base.singleton_class.instance_method(fmeth_name)
-            super_method = meth.super_method
-            while super_method
-              if Finalist.finalized_methods[super_method.owner]&.member?(super_method.name)
-                raise OverrideFinalMethodError.new("#{super_method} at #{super_method.source_location.join(":")} is overrided\n  by #{meth} at #{meth.source_location.join(":")}", base.singleton_class, super_method.owner, meth, :extended)
-              end
-              super_method = super_method.super_method
+        Finalist.finalized_methods[mod]&.each do |final_method_name|
+          meth =
+            begin
+              base.singleton_class.instance_method(final_method_name)
+            rescue NoMethodError
+              nil
             end
-          end
+
+          verify_final_method(meth, :extended) if meth
         end
       end
     end
   end
 
   module SyntaxMethods
+    private
+
     def final(symbol)
       method_set = Finalist.finalized_methods[self] ||= Set.new
+      instance_method(symbol)
       method_set.add(symbol)
+      symbol
     end
-  end
 
-  def method_added(symbol)
-    super
-
-    return if Finalist.disabled?
-
-    meth = instance_method(symbol)
-    super_method = meth.super_method
-    while super_method
-      if Finalist.finalized_methods[super_method.owner]&.member?(super_method.name)
-        raise OverrideFinalMethodError.new("#{super_method} at #{super_method.source_location.join(":")} is overrided\n  by #{meth} at #{meth.source_location.join(":")}", self, super_method.owner, meth, :method_added)
-      end
-      super_method = super_method.super_method
-    end
-  end
-
-  def singleton_method_added(symbol)
-    super
-
-    return if Finalist.disabled?
-
-    meth = singleton_class.instance_method(symbol)
-    super_method = meth.super_method
-    while super_method
-      if Finalist.finalized_methods[super_method.owner]&.member?(super_method.name)
-        raise OverrideFinalMethodError.new("#{super_method} at #{super_method.source_location.join(":")} is overrided\n  by #{meth} at #{meth.source_location.join(":")}", self, super_method.owner, meth, :singleton_method_added)
-      end
-      super_method = super_method.super_method
+    def final_singleton_method(symbol)
+      method_set = Finalist.finalized_methods[self.singleton_class] ||= Set.new
+      singleton_class.instance_method(symbol)
+      method_set.add(symbol)
+      symbol
     end
   end
 end

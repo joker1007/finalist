@@ -319,7 +319,7 @@ RSpec.describe Finalist do
 
       expect(ex).not_to be_nil
       expect(ex.detect_type).to eq(:singleton_method_added)
-      expect(ex.override_class).to eq(J2)
+      expect(ex.override_class).to eq(J2.singleton_class)
       expect(ex.unbound_method.name).to eq(:foo)
     end
   end
