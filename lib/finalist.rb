@@ -7,7 +7,13 @@ using Module.new {
       super_method = meth.super_method
       while super_method
         if Finalist.finalized_methods[super_method.owner]&.member?(super_method.name)
-          raise Finalist::OverrideFinalMethodError.new("#{super_method.owner}##{super_method.name} at #{super_method.source_location.join(":")} is overrided\n  by #{meth.owner}##{meth.name} at #{meth.source_location.join(":")}", meth.owner, super_method.owner, meth, detect_type)
+          backtrace = caller(1)
+          backtrace_start_pos = backtrace.rindex { |b| b.index(__FILE__) }
+          backtrace = backtrace.drop(backtrace_start_pos + 1)
+          raise Finalist::OverrideFinalMethodError.new(
+            "#{super_method.owner}##{super_method.name} at #{super_method.source_location.join(":")} is overrided\n  by #{meth.owner}##{meth.name} at #{meth.source_location.join(":")}",
+            meth.owner, super_method.owner, meth, detect_type
+          ).tap { |ex| ex.set_backtrace(backtrace) }
         end
         super_method = super_method.super_method
       end
