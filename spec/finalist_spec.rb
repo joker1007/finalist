@@ -58,6 +58,142 @@ RSpec.describe Finalist do
     end
   end
 
+  context "if override finalized method by another module" do
+    it "raise Finalist::OverrideFinalMethodError", aggregate_failures: true do
+      ex = nil
+      begin
+        class O1
+          extend Finalist
+
+          final def foo
+          end
+        end
+
+        module O3
+          def foo
+          end
+        end
+
+        class O2 < O1
+          include O3
+        end
+      rescue Finalist::OverrideFinalMethodError => e
+        ex = e
+      end
+
+      expect(ex).not_to be_nil
+      expect(ex.detect_type).to eq(:include)
+      expect(ex.override_class).to eq(O3)
+      expect(ex.unbound_method.name).to eq(:foo)
+
+      ex = nil
+      begin
+        c = Class.new(O1)
+        c.include(O3)
+      rescue Finalist::OverrideFinalMethodError => e
+        ex = e
+      end
+
+      expect(ex).not_to be_nil
+      expect(ex.detect_type).to eq(:include)
+      expect(ex.override_class).to eq(O3)
+      expect(ex.unbound_method.name).to eq(:foo)
+    end
+  end
+
+  context "if override finalized singleton method by another module that is ActiveSupport::Concern style" do
+    it "raise Finalist::OverrideFinalMethodError", aggregate_failures: true do
+      ex = nil
+      begin
+        class P1
+          extend Finalist
+
+          final_singleton_method def self.foo
+          end
+        end
+
+        module P3
+          def self.included(base)
+            super
+            base.extend(ClassMethods)
+          end
+
+          module ClassMethods
+            def foo
+            end
+          end
+        end
+
+        class P2 < P1
+          include P3
+        end
+      rescue Finalist::OverrideFinalMethodError => e
+        ex = e
+      end
+
+      expect(ex).not_to be_nil
+      expect(ex.detect_type).to eq(:extend)
+      expect(ex.override_class).to eq(P3::ClassMethods)
+      expect(ex.unbound_method.name).to eq(:foo)
+
+      ex = nil
+      begin
+        c = Class.new(P1)
+        c.include(P3)
+      rescue Finalist::OverrideFinalMethodError => e
+        ex = e
+      end
+
+      expect(ex).not_to be_nil
+      expect(ex.detect_type).to eq(:extend)
+      expect(ex.override_class).to eq(P3::ClassMethods)
+      expect(ex.unbound_method.name).to eq(:foo)
+    end
+  end
+
+  context "if override finalized singleton method by another module (extend)" do
+    it "raise Finalist::OverrideFinalMethodError", aggregate_failures: true do
+      ex = nil
+      begin
+        class Q1
+          extend Finalist
+
+          final_singleton_method def self.foo
+          end
+        end
+
+        module Q3
+          def foo
+          end
+        end
+
+        class Q2 < Q1
+          extend Q3
+        end
+      rescue Finalist::OverrideFinalMethodError => e
+        ex = e
+      end
+
+      expect(ex).not_to be_nil
+      expect(ex.detect_type).to eq(:extend)
+      expect(ex.override_class).to eq(Q3)
+      expect(ex.unbound_method.name).to eq(:foo)
+
+      ex = nil
+      begin
+        c = Class.new(Q1)
+        c.extend(Q3)
+      rescue Finalist::OverrideFinalMethodError => e
+        ex = e
+      end
+
+      expect(ex).not_to be_nil
+      expect(ex.detect_type).to eq(:extend)
+      expect(ex.override_class).to eq(Q3)
+      expect(ex.unbound_method.name).to eq(:foo)
+    end
+  end
+
   context "overrided by grandson" do
     it "raise Finalist::OverrideFinalMethodError", aggregate_failures: true do
       ex = nil
@@ -473,3 +609,19 @@ RSpec.describe Finalist do
     end
   end
 end
+
+# class Hoge
+#   extend Finalist
+# 
+#   final def foo
+#   end
+# end
+# 
+# module Bar
+#   def foo
+#   end
+# end
+# 
+# class Foo < Hoge
+#   include Bar
+# end

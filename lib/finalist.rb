@@ -80,6 +80,40 @@ module Finalist
   end
 
   module ModuleMethods
+    def include(mod)
+      super
+
+      ancestors.drop(1).each do |mod|
+        Finalist.finalized_methods[mod]&.each do |final_method_name|
+          meth =
+            begin
+              instance_method(final_method_name)
+            rescue NoMethodError
+              nil
+            end
+
+          verify_final_method(meth, :include) if meth
+        end
+      end
+    end
+
+    def extend(mod)
+      super
+
+      singleton_class.ancestors.drop(1).each do |mod|
+        Finalist.finalized_methods[mod]&.each do |final_method_name|
+          meth =
+            begin
+              singleton_class.instance_method(final_method_name)
+            rescue NoMethodError
+              nil
+            end
+
+          verify_final_method(meth, :extend) if meth
+        end
+      end
+    end
+
     private
 
     def included(base)
