@@ -35,6 +35,9 @@ This gem supports other cases.
 - [overrider](https://github.com/joker1007/overrider) (`override` implementation)
 - [abstriker](https://github.com/joker1007/abstriker) (`abstract` implementation)
 
+## Requirements
+- ruby-2.5.0 or later (depend on `UnbountMethod#super_method` behavior)
+
 ## Installation
 
 Add this line to your application's Gemfile:
